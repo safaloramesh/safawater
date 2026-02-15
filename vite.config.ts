@@ -3,10 +3,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // Ensures assets load correctly on any port
+  base: '', // This ensures assets load via ./assets/ instead of /assets/
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    emptyOutDir: true,
   }
 })
