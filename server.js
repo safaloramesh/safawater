@@ -17,10 +17,7 @@ const STORAGE_FILE = path.join(STORAGE_DIR, 'data.json');
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// 1. Diagnostic Log
-console.log("Checking for index.html at:", path.join(DIST_PATH, 'index.html'));
-
-// 2. API Routes (Must be above static files)
+// 1. API: Load Data
 app.get('/api/data', (req, res) => {
     if (fs.existsSync(STORAGE_FILE)) {
         res.sendFile(STORAGE_FILE);
@@ -29,6 +26,7 @@ app.get('/api/data', (req, res) => {
     }
 });
 
+// 2. API: Save Data
 app.post('/api/save', (req, res) => {
     try {
         if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
@@ -39,16 +37,12 @@ app.post('/api/save', (req, res) => {
     }
 });
 
-// 3. Serve Static Files
-// This allows the browser to find files in the /assets folder
+// 3. Serve Frontend Files
 app.use(express.static(DIST_PATH));
 
-// 4. Wildcard / SPA Routing
+// 4. SPA Routing
 app.get('*', (req, res) => {
     const indexPath = path.join(DIST_PATH, 'index.html');
-    
-    // If browser asks for a specific file (like .js) that doesn't exist, 
-    // don't send index.html, send a 404.
     if (req.path.includes('.')) {
         res.status(404).send("File not found");
     } else if (fs.existsSync(indexPath)) {
@@ -60,5 +54,4 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend running on port ${PORT}`);
-    console.log(`Storage path: ${STORAGE_FILE}`);
 });
