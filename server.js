@@ -11,32 +11,54 @@ const rootDir = path.resolve(__dirname);
 const app = express();
 const PORT = 3000;
 const DIST_PATH = path.join(rootDir, 'dist');
+const STORAGE_DIR = path.join(rootDir, 'storage');
+const STORAGE_FILE = path.join(STORAGE_DIR, 'data.json');
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
-// 1. Force the server to tell us if it sees the files in the log
+// 1. Diagnostic Log
 console.log("Checking for index.html at:", path.join(DIST_PATH, 'index.html'));
 
-// 2. Serve static files FIRST
-app.use(express.static(DIST_PATH));
-
-// 3. API Routes
+// 2. API Routes (Must be above static files)
 app.get('/api/data', (req, res) => {
-    res.json({ sales: [], customers: [] });
+    if (fs.existsSync(STORAGE_FILE)) {
+        res.sendFile(STORAGE_FILE);
+    } else {
+        res.json({ sales: [], customers: [] });
+    }
 });
 
-// 4. Wildcard - Send index.html or an error message
+app.post('/api/save', (req, res) => {
+    try {
+        if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
+        fs.writeFileSync(STORAGE_FILE, JSON.stringify(req.body, null, 2));
+        res.send({ status: 'success' });
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
+
+// 3. Serve Static Files
+// This allows the browser to find files in the /assets folder
+app.use(express.static(DIST_PATH));
+
+// 4. Wildcard / SPA Routing
 app.get('*', (req, res) => {
     const indexPath = path.join(DIST_PATH, 'index.html');
-    if (fs.existsSync(indexPath)) {
+    
+    // If browser asks for a specific file (like .js) that doesn't exist, 
+    // don't send index.html, send a 404.
+    if (req.path.includes('.')) {
+        res.status(404).send("File not found");
+    } else if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
     } else {
-        // If you see this message on your white screen, the build failed!
-        res.status(404).send("<h1>System Error</h1><p>The frontend build folder (dist) is empty. Please check your Docker build logs.</p>");
+        res.status(404).send("<h1>System Error</h1><p>Build folder (dist) missing.</p>");
     }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`Backend running on port ${PORT}`);
+    console.log(`Storage path: ${STORAGE_FILE}`);
 });
