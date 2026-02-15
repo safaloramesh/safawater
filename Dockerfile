@@ -1,16 +1,18 @@
-# Build Stage
+# Stage 1: Build the application
 FROM node:18-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+# This creates the 'dist' folder
 RUN npm run build
 
-# Production Stage
+# Stage 2: Serve the application with Nginx
 FROM nginx:stable-alpine
-# Copy the build output
+# Copy the compiled builder output to Nginx's serving directory
 COPY --from=build /app/dist /usr/share/nginx/html
-# Copy a custom nginx config to handle SPA routing (optional but recommended)
+
+# Add a basic Nginx config to handle SPA routing
 RUN echo 'server { \
     listen 80; \
     location / { \
