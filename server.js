@@ -17,7 +17,7 @@ const DIST_PATH = path.join(rootDir, 'dist');
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// API Routes (Must stay above the static/wildcard routes)
+// 1. API Routes FIRST
 app.get('/api/data', (req, res) => {
     if (fs.existsSync(STORAGE_FILE)) {
         res.sendFile(STORAGE_FILE);
@@ -28,30 +28,30 @@ app.get('/api/data', (req, res) => {
 
 app.post('/api/save', (req, res) => {
     try {
-        if (!fs.existsSync(STORAGE_DIR)) {
-            fs.mkdirSync(STORAGE_DIR, { recursive: true });
-        }
+        if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
         fs.writeFileSync(STORAGE_FILE, JSON.stringify(req.body, null, 2));
         res.send({ status: 'success' });
     } catch (err) {
-        console.error("Save error:", err.message);
         res.status(500).send({ error: err.message });
     }
 });
 
-// Serve static files from the 'dist' directory
-app.use(express.static(DIST_PATH));
+// 2. Serve Static Files with Cache-Busting
+app.use(express.static(DIST_PATH, {
+    setHeaders: (res, path) => {
+        if (path.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
+}));
 
-// Handle SPA routing
+// 3. Fallback to index.html for SPA
 app.get('*', (req, res) => {
     const indexPath = path.join(DIST_PATH, 'index.html');
-    
-    // Safety check: If the request looks like a file (has a dot like .js), 
-    // but we reached here, it means the file is actually missing.
-    if (req.path.includes('.')) {
-        res.status(404).send("File not found");
-    } else {
+    if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
+    } else {
+        res.status(404).send("Front-end build files not found.");
     }
 });
 
