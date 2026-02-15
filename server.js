@@ -17,7 +17,7 @@ const DIST_PATH = path.join(rootDir, 'dist');
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// 1. API Routes FIRST
+// 1. API: Load data from Volume
 app.get('/api/data', (req, res) => {
     if (fs.existsSync(STORAGE_FILE)) {
         res.sendFile(STORAGE_FILE);
@@ -26,6 +26,7 @@ app.get('/api/data', (req, res) => {
     }
 });
 
+// 2. API: Save data to Volume
 app.post('/api/save', (req, res) => {
     try {
         if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
@@ -36,26 +37,19 @@ app.post('/api/save', (req, res) => {
     }
 });
 
-// 2. Serve Static Files with Cache-Busting
-app.use(express.static(DIST_PATH, {
-    setHeaders: (res, path) => {
-        if (path.endsWith('.html')) {
-            res.setHeader('Cache-Control', 'no-cache');
-        }
-    }
-}));
+// 3. Serve Frontend Static Files
+app.use(express.static(DIST_PATH));
 
-// 3. Fallback to index.html for SPA
+// 4. Handle SPA routing (Send index.html for unknown routes)
 app.get('*', (req, res) => {
-    const indexPath = path.join(DIST_PATH, 'index.html');
-    if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
+    if (req.path.includes('.')) {
+        res.status(404).send("File not found");
     } else {
-        res.status(404).send("Front-end build files not found.");
+        res.sendFile(path.join(DIST_PATH, 'index.html'));
     }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Backend running on port ${PORT}`);
-    console.log(`Frontend served from: ${DIST_PATH}`);
+    console.log(`Server running on port ${PORT}`);
+    console.log(`Serving frontend from: ${DIST_PATH}`);
 });
