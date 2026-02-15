@@ -1,0 +1,5 @@
+{
+  "name": "Safa Water Management System",
+  "description": "A comprehensive water distribution and sales management system for Safa Water, featuring pump tracking, customer tier pricing, and detailed BHD invoicing.",
+  "requestFramePermissions": []
+}

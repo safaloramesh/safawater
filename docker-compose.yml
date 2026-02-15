@@ -1,0 +1,12 @@
+services:
+  safa-water-app:
+    build:
+      context: .
+      args:
+        - API_KEY=${API_KEY}
+    container_name: safa_water_system
+    ports:
+      - "8080:80"
+    environment:
+      - API_KEY=${API_KEY}
+    restart: unless-stopped
