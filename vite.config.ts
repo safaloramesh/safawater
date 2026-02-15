@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: './', // CRITICAL: This adds the "." before /assets to make it work anywhere
+  base: './', // CRITICAL: Fixes the white screen by using relative paths
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
