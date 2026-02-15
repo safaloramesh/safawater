@@ -1,4 +1,3 @@
-
 version: '3.8'
 
 services:
@@ -9,8 +8,15 @@ services:
     ports:
       - "8080:80"
     restart: unless-stopped
+    # ADDED: Mapping the internal storage folder to a permanent volume
+    volumes:
+      - safa_data:/usr/share/nginx/html/storage
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+
+# ADDED: Defining the permanent volume
+volumes:
+  safa_data:
