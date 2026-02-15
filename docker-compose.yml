@@ -1,21 +1,13 @@
-
 version: '3.8'
-
 services:
   safa-water:
-    build:
-      context: .
+    build: .
     container_name: safa_water_system
     ports:
-      - "8080:80"
+      - "8080:3000"
     volumes:
-      - safa_data:/app/data
-    restart: unless-stopped
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+      - safa_permanent_storage:/app/storage
+    restart: always
 
 volumes:
-  safa_data:
+  safa_permanent_storage:
