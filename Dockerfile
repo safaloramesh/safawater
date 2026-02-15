@@ -1,31 +1,30 @@
-FROM php:8.2-fpm
+FROM php:8.2-fpm-alpine
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    git \
-    curl \
+# Install system dependencies for Laravel
+RUN apk add --no-cache \
     libpng-dev \
-    libonig-dev \
     libxml2-dev \
     zip \
-    unzip
+    unzip \
+    git \
+    curl \
+    oniguruma-dev
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
+RUN docker-php-ext-install pdo_mysql mbstring exis pcntl bcmath gd
 
-# Get latest Composer
+# Get Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Set working directory
 WORKDIR /var/www
 
-# Copy existing application directory contents
-COPY . /var/www
+# Copy your code into the container
+COPY . .
 
-# Install dependencies
+# Install Laravel dependencies
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Set permissions for Laravel (Crucial step)
+# Give permission to storage folders
 RUN chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
 EXPOSE 9000
