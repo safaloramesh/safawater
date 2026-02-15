@@ -10,46 +10,33 @@ const rootDir = path.resolve(__dirname);
 
 const app = express();
 const PORT = 3000;
-const STORAGE_DIR = path.join(rootDir, 'storage');
-const STORAGE_FILE = path.join(STORAGE_DIR, 'data.json');
 const DIST_PATH = path.join(rootDir, 'dist');
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
+app.use(express.json());
 
-// 1. API: Load data from Volume
-app.get('/api/data', (req, res) => {
-    if (fs.existsSync(STORAGE_FILE)) {
-        res.sendFile(STORAGE_FILE);
-    } else {
-        res.json({ sales: [], customers: [] });
-    }
-});
+// 1. Force the server to tell us if it sees the files in the log
+console.log("Checking for index.html at:", path.join(DIST_PATH, 'index.html'));
 
-// 2. API: Save data to Volume
-app.post('/api/save', (req, res) => {
-    try {
-        if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
-        fs.writeFileSync(STORAGE_FILE, JSON.stringify(req.body, null, 2));
-        res.send({ status: 'success' });
-    } catch (err) {
-        res.status(500).send({ error: err.message });
-    }
-});
-
-// 3. Serve Frontend Static Files
+// 2. Serve static files FIRST
 app.use(express.static(DIST_PATH));
 
-// 4. Handle SPA routing (Send index.html for unknown routes)
+// 3. API Routes
+app.get('/api/data', (req, res) => {
+    res.json({ sales: [], customers: [] });
+});
+
+// 4. Wildcard - Send index.html or an error message
 app.get('*', (req, res) => {
-    if (req.path.includes('.')) {
-        res.status(404).send("File not found");
+    const indexPath = path.join(DIST_PATH, 'index.html');
+    if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
     } else {
-        res.sendFile(path.join(DIST_PATH, 'index.html'));
+        // If you see this message on your white screen, the build failed!
+        res.status(404).send("<h1>System Error</h1><p>The frontend build folder (dist) is empty. Please check your Docker build logs.</p>");
     }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Serving frontend from: ${DIST_PATH}`);
+    console.log(`Backend running on port ${PORT}`);
 });
