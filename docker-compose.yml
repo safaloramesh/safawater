@@ -1,12 +1,53 @@
+version: '3.8'
+
 services:
-  safa-water-app:
+  # PHP & Application Logic
+  app:
     build:
       context: .
-      args:
-        - API_KEY=${API_KEY}
-    container_name: safa_water_system
-    ports:
-      - "8080:80"
+      dockerfile: Dockerfile
+    container_name: safawater_app
+    restart: always
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
     environment:
-      - API_KEY=${API_KEY}
-    restart: unless-stopped
+      - APP_ENV=local
+      - APP_KEY=base64:$(openssl rand -base64 32)
+      - DB_CONNECTION=mysql
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_DATABASE=safawater
+      - DB_USERNAME=safawater_user
+      - DB_PASSWORD=safawater_pass
+    depends_on:
+      - db
+
+  # Nginx Web Server
+  nginx:
+    image: nginx:alpine
+    container_name: safawater_nginx
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker-compose/nginx:/etc/nginx/conf.d/
+    depends_on:
+      - app
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: safawater_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: safawater
+      MYSQL_USER: safawater_user
+      MYSQL_PASSWORD: safawater_pass
+      MYSQL_ROOT_PASSWORD: root_password
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:
