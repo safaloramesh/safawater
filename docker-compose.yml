@@ -1,10 +1,19 @@
 version: '3.8'
+
 services:
-  safawater-web:
+  safa-water:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: safawater_frontend
+      args:
+        - API_KEY=${API_KEY}
+    container_name: safa_water_system
     ports:
-      - "5173:80"
-    restart: always
+      - "8080:80"
+    environment:
+      - API_KEY=${API_KEY}
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
