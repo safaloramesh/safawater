@@ -1,18 +1,24 @@
-# Stage 1: Build the application
+# Stage 1: Build (Keep this exactly as you have it)
 FROM node:18-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# This creates the 'dist' folder
 RUN npm run build
 
-# Stage 2: Serve the application with Nginx
+# Stage 2: Serve
 FROM nginx:stable-alpine
-# Copy the compiled builder output to Nginx's serving directory
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Add a basic Nginx config to handle SPA routing
+# --- NEW: PERSISTENT STORAGE SETUP ---
+# Create a folder for your data and give it permissions
+RUN mkdir -p /usr/share/nginx/html/storage && \
+    chmod 777 /usr/share/nginx/html/storage
+
+# Tell Docker this folder should be a persistent volume
+VOLUME /usr/share/nginx/html/storage
+# -------------------------------------
+
 RUN echo 'server { \
     listen 80; \
     location / { \
