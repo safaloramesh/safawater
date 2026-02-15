@@ -17,16 +17,13 @@ const STORAGE_FILE = path.join(STORAGE_DIR, 'data.json');
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// 1. API: Load Data
+// API: Load Data
 app.get('/api/data', (req, res) => {
-    if (fs.existsSync(STORAGE_FILE)) {
-        res.sendFile(STORAGE_FILE);
-    } else {
-        res.json({ sales: [], customers: [] });
-    }
+    if (fs.existsSync(STORAGE_FILE)) return res.sendFile(STORAGE_FILE);
+    res.json({ sales: [], customers: [] });
 });
 
-// 2. API: Save Data
+// API: Save Data
 app.post('/api/save', (req, res) => {
     try {
         if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
@@ -37,21 +34,17 @@ app.post('/api/save', (req, res) => {
     }
 });
 
-// 3. Serve Frontend Files
+// Serve Static Frontend Files
 app.use(express.static(DIST_PATH));
 
-// 4. SPA Routing
+// SPA Fallback
 app.get('*', (req, res) => {
     const indexPath = path.join(DIST_PATH, 'index.html');
     if (req.path.includes('.')) {
         res.status(404).send("File not found");
-    } else if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
     } else {
-        res.status(404).send("<h1>System Error</h1><p>Build folder (dist) missing.</p>");
+        res.sendFile(indexPath);
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Backend running on port ${PORT}`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Backend on ${PORT}`));
