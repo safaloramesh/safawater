@@ -1,59 +1,39 @@
-
-import express from 'express';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import cors from 'cors';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const cors = require('cors');
 
 const app = express();
-const PORT = process.env.PORT || 80;
-const DATA_DIR = path.join(__dirname, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'db.json');
+const PORT = 3000;
+const STORAGE_FILE = path.join(__dirname, 'storage', 'data.json');
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// Ensure data directory exists
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
-}
+// GET: Load data from the Docker Volume
+app.get('/api/data', (req, res) => {
+    if (fs.existsSync(STORAGE_FILE)) {
+        res.sendFile(STORAGE_FILE);
+    } else {
+        res.json({ sales: [], customers: [] });
+    }
+});
 
-// Initialize db.json if it doesn't exist
-if (!fs.existsSync(DATA_FILE)) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify({}));
-}
+// POST: Save data to the Docker Volume
+app.post('/api/save', (req, res) => {
+    try {
+        if (!fs.existsSync(path.join(__dirname, 'storage'))) {
+            fs.mkdirSync(path.join(__dirname, 'storage'));
+        }
+        fs.writeFileSync(STORAGE_FILE, JSON.stringify(req.body, null, 2));
+        res.send({ status: 'success' });
+    } catch (err) {
+        res.status(500).send({ error: err.message });
+    }
+});
 
-// Serve static files from the 'dist' directory
+// Serve the React frontend from the 'dist' folder
 app.use(express.static(path.join(__dirname, 'dist')));
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'dist', 'index.html')));
 
-// API Endpoints
-app.get('/api/state', (req, res) => {
-  try {
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    res.json(JSON.parse(data));
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to read data' });
-  }
-});
-
-app.post('/api/state', (req, res) => {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(req.body, null, 2));
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to save data' });
-  }
-});
-
-// Fallback to index.html for SPA routing
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Data file located at: ${DATA_FILE}`);
-});
+app.listen(PORT, '0.0.0.0', () => console.log(`Backend running on port ${PORT}`));
