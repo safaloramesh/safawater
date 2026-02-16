@@ -17,7 +17,7 @@ const STORAGE_FILE = path.join(STORAGE_DIR, 'data.json');
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// 1. API: Load Data
+// API: Load Data
 app.get('/api/data', (req, res) => {
     if (fs.existsSync(STORAGE_FILE)) {
         res.sendFile(STORAGE_FILE);
@@ -26,7 +26,7 @@ app.get('/api/data', (req, res) => {
     }
 });
 
-// 2. API: Save Data
+// API: Save Data
 app.post('/api/save', (req, res) => {
     try {
         if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
@@ -37,21 +37,19 @@ app.post('/api/save', (req, res) => {
     }
 });
 
-// 3. Serve Frontend Files (MUST be above wildcard)
+// Serve Static Files (MUST be before wildcard)
 app.use(express.static(DIST_PATH));
 
-// 4. SPA Routing
+// SPA Fallback
 app.get('*', (req, res) => {
     const indexPath = path.join(DIST_PATH, 'index.html');
-    
-    // Safety check for broken file paths
     if (req.path.includes('.')) {
         res.status(404).send("File not found");
-    } else if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
     } else {
-        res.status(404).send("<h1>System Error</h1><p>Build folder (dist) missing.</p>");
+        res.sendFile(indexPath);
     }
 });
 
-app.listen(PORT, '0.0.0.0', () => console.log(`POS Live on ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server live on port ${PORT}`);
+});
