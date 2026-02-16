@@ -17,7 +17,7 @@ const STORAGE_FILE = path.join(STORAGE_DIR, 'data.json');
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// API: Load Data
+// API: Load Data from Docker Volume
 app.get('/api/data', (req, res) => {
     if (fs.existsSync(STORAGE_FILE)) {
         res.sendFile(STORAGE_FILE);
@@ -26,7 +26,7 @@ app.get('/api/data', (req, res) => {
     }
 });
 
-// API: Save Data
+// API: Save Data to Docker Volume
 app.post('/api/save', (req, res) => {
     try {
         if (!fs.existsSync(STORAGE_DIR)) fs.mkdirSync(STORAGE_DIR, { recursive: true });
@@ -37,10 +37,10 @@ app.post('/api/save', (req, res) => {
     }
 });
 
-// Serve Static Files (MUST be before wildcard)
+// Serve Static Files (CSS/JS)
 app.use(express.static(DIST_PATH));
 
-// SPA Fallback
+// SPA Fallback: Send index.html for all other routes
 app.get('*', (req, res) => {
     const indexPath = path.join(DIST_PATH, 'index.html');
     if (req.path.includes('.')) {
@@ -51,5 +51,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server live on port ${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
